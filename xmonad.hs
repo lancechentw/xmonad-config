@@ -1,4 +1,5 @@
 import XMonad
+import XMonad.Config.Xfce
 import System.Exit
  
 import qualified XMonad.StackSet as W
@@ -16,8 +17,9 @@ import Graphics.X11.ExtraTypes.XF86 as XF86
 
 import XMonad.Hooks.SetWMName
 
-import XMonad.Layout.TrackFloating
+import XMonad.Layout.FocusTracking
 import XMonad.Hooks.RefocusLast (refocusLastLayoutHook, refocusLastWhen, isFloat)
+import XMonad.Layout.Spiral
 
 -- The preferred terminal program, which is used in a binding below and by
 -- certain contrib modules.
@@ -26,7 +28,7 @@ myTerminal      = "urxvt"
  
 -- Width of the window border in pixels.
 --
-myBorderWidth   = 3
+myBorderWidth   = 1
  
 -- modMask lets you specify which modkey you want to use. The default
 -- is mod1Mask ("left alt").  You may also consider using mod3Mask
@@ -72,9 +74,10 @@ myFocusedBorderColor = "#88a470"
 myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
  
     -- launch a terminal
-    [ ((modm .|. shiftMask, xK_Return), spawn $ XMonad.terminal conf)
+    --[ ((modm .|. shiftMask, xK_Return), spawn $ XMonad.terminal conf)
+    [ ((modm .|. shiftMask, xK_Return), spawn "kitty")
 
-    , ((modm,               xK_d     ), spawn "xrandr --output HDMI1 --off --output HDMI2 --off --output DP1 --off --output DP2 --off")
+    , ((modm,               xK_d     ), spawn "xrandr --output HDMI1 --off --output HDMI2 --off --output DP1 --off --output DP1-8 --off --output DP1-9 --off --output DP2 --off --output eDP1 --auto --mode 1920x1080")
 
     , ((modm .|. shiftMask, xK_d     ), spawn "/home/lance/bin/screen.sh")
 
@@ -89,9 +92,9 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
     , ((0           , 0x1008FFA7 ), spawn "/usr/bin/systemctl hibernate")
 
-    , ((0           , 0x1008FF2D ), spawn "/usr/bin/slimlock")
+    , ((0           , 0x1008FF2D ), spawn "/usr/bin/xflock4")
 
-    , ((modm .|. shiftMask, xK_l ), spawn "/usr/bin/slimlock")
+    , ((modm .|. shiftMask, xK_l ), spawn "/usr/bin/xflock4")
 
     , ((0           , 0x1008ff93 ), spawn "xset dpms force off")
 
@@ -165,6 +168,9 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     -- Restart xmonad
     -- , ((modm              , xK_q     ), restart "xmonad" True)
     , ((modm .|. shiftMask   , xK_q     ), restart "xmonad" True)
+
+    , ((modm, xK_s ), spawn "/usr/bin/scrot -u -p")
+    , ((modm, xK_i ), spawn "/usr/bin/scrot -s - | /usr/bin/tesseract - - -l chi_tra+eng | xclip -selection clipboard")
     ]
     ++
  
@@ -215,7 +221,7 @@ myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $
 -- which denotes layout choice.
 --
 -- myLayout = avoidStruts (tiled ||| Mirror tiled ||| Full) ||| Full
-myLayout = refocusLastLayoutHook . trackFloating $ avoidStruts (tiled ||| Mirror tiled ||| Full)
+myLayout = refocusLastLayoutHook . focusTracking $ avoidStruts (tiled ||| Mirror tiled ||| Full ||| spiral (6/7))
   where
      -- default tiling algorithm partitions the screen into two panes
      tiled   = Tall nmaster delta ratio
@@ -257,7 +263,7 @@ myManageHook = composeAll
  
 -- Whether focus follows the mouse pointer.
 myFocusFollowsMouse :: Bool
-myFocusFollowsMouse = True
+myFocusFollowsMouse = False
  
  
 ------------------------------------------------------------------------
@@ -338,30 +344,44 @@ myStartupHook = setWMName "LG3D"
  
 -- Run xmonad with the settings you specify. No need to modify this.
 --
-main = do 
-d <- spawnDzen myLeftBar
-spawnToDzen "conky -c ~/.conkyrc" myRightBar
-xmonad $ withUrgencyHook NoUrgencyHook $ ewmh $ docks def {
-      -- simple stuff
-        terminal           = myTerminal,
-        focusFollowsMouse  = myFocusFollowsMouse,
-        borderWidth        = myBorderWidth,
+main = xmonad xfceConfig {
         modMask            = myModMask,
-        -- numlockMask        = myNumlockMask,
         workspaces         = myWorkspaces,
+        keys               = myKeys,
         normalBorderColor  = myNormalBorderColor,
         focusedBorderColor = myFocusedBorderColor,
- 
-      -- key bindings
-        keys               = myKeys,
-        mouseBindings      = myMouseBindings,
- 
-      -- hooks, layouts
-        layoutHook         = myLayout,
-        manageHook         = myManageHook,
-        logHook            = myLogHook d,
-        startupHook        = myStartupHook
-    }
+        borderWidth        = myBorderWidth,
+        focusFollowsMouse  = myFocusFollowsMouse
+}
+
+--main = do 
+--d <- spawnDzen myLeftBar
+--spawnToDzen "conky -c ~/.conkyrc" myRightBar
+--xmonad $ withUrgencyHook NoUrgencyHook $ ewmh $ docks def {
+--{
+--      -- simple stuff
+--        terminal           = myTerminal,
+--        focusFollowsMouse  = myFocusFollowsMouse,
+--        borderWidth        = myBorderWidth,
+--        modMask            = myModMask,
+--        -- numlockMask        = myNumlockMask,
+--        workspaces         = myWorkspaces,
+--        normalBorderColor  = myNormalBorderColor,
+--        focusedBorderColor = myFocusedBorderColor,
+-- 
+--      -- key bindings
+--        keys               = myKeys,
+--        mouseBindings      = myMouseBindings,
+-- 
+--      -- hooks, layouts
+--        layoutHook         = myLayout,
+--        manageHook         = myManageHook,
+--        --logHook            = myLogHook d,
+--        logHook            = ewmhDesktopsLogHook,
+--        --startupHook        = myStartupHook
+--        startupHook        = ewmhDesktopsStartup,
+--        handleEventHook    = ewmhDesktopsEventHook
+--    }
 
  
 -- A structure containing your configuration settings, overriding
