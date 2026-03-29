@@ -7,6 +7,7 @@ import qualified Data.Map        as M
 
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.ManageDocks
+import XMonad.Hooks.ManageHelpers (isNotification)
 import XMonad.Util.Run(spawnPipe)
 import XMonad.Hooks.UrgencyHook
 import XMonad.Hooks.EwmhDesktops
@@ -251,7 +252,9 @@ myLayout = refocusLastLayoutHook . focusTracking $ avoidStruts (tiled ||| Mirror
 -- 'className' and 'resource' are used below.
 --
 myManageHook = composeAll
-    [ className =? "MPlayer"        --> doFloat
+    [ isNotification              --> doIgnore
+    , resource  =? "xfce4-notifyd" --> doIgnore
+    , className =? "MPlayer"        --> doFloat
     , className =? "Gimp"           --> doFloat
     , className =? "URxvt"           --> doFloat
     , className =? "Thunar"           --> doFloat
@@ -351,7 +354,8 @@ main = xmonad xfceConfig {
         normalBorderColor  = myNormalBorderColor,
         focusedBorderColor = myFocusedBorderColor,
         borderWidth        = myBorderWidth,
-        focusFollowsMouse  = myFocusFollowsMouse
+        focusFollowsMouse  = myFocusFollowsMouse,
+        manageHook         = myManageHook <+> manageHook xfceConfig
 }
 
 --main = do 
